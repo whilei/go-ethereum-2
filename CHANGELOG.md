@@ -20,7 +20,12 @@ Releases considered __stable__ may be found on our [Releases Page](https://githu
 
 Rolling builds for the master branch may be found at [builds.etcdevteam.com](builds.etcdevteam.com).
 
-## [4.0.0] - 2017-09-05
+## [Unreleased]
+
+#### Added
+- _Command_: `dump [unsorted] [hash|num],[hash|num] [address],[address]` - use the `unsorted` option to stream state balances instead of holding in memory. [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341) also improves the in-memory storage for sorted addresses with algorithmic compression. Thanks @sudachen!
+
+## [4.0.0] - 2017-09-05 - b11d32b
 
 #### Consensus
 - [ECIP-1017](https://github.com/ethereumproject/ECIPs/blob/master/ECIPs/ECIP-1017.md) - implement monetary policy on Morden Testnet (2 million block era) and Mainnet (5 million block era)
