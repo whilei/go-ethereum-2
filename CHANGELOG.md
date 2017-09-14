@@ -23,7 +23,7 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 ## [Unreleased]
 
 #### Added
-- _Command_: `dump [unsorted] [hash|num],[hash|num] [address],[address]` - use the `unsorted` option to stream state balances instead of holding in memory. [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341) also improves the in-memory storage for sorted addresses with algorithmic compression. Thanks @sudachen!
+- _Command_: `dump [sorted] [hash|num],[hash|num] [address],[address]` - use the `sorted` option to sort state balances in memory (this may still require significant time and memory resources -- use without `sorted` to stream data without requiring to hold in memory). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
 
 ## [4.0.0] - 2017-09-05 - b11d32b
 
