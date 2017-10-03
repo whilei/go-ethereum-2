@@ -23,7 +23,15 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 ## [Unreleased]
 
 #### Added
-- _Command_: `dump [sorted] [hash|num],[hash|num] [address],[address]` - use the `sorted` option to sort state balances in memory (this may still require significant time and memory resources -- use without `sorted` to stream data without requiring to hold in memory). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
+- _Command_: `dump [sorted] [hash|num],[hash|num] [address],[address]` - use the `sorted` option to sort state balances in memory (note that this will require significantly more time and memory resources). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
+- _Feature_: `mlog`: machine-readable/event-based logging. Designed to play nicely with log analysis systems like Elasticsearch/+Kibana. Please find associated documentation on the Wiki at [mlog-API](https://github.com/ethereumproject/go-ethereum/wiki/mlog-API).
+
+#### Changed
+- JSON-RPC: `debug_metrics` method accepts optional boolean argument to toggle raw metrics (eg. `"1m.rate": 1174`) vs. human-readable (default, eg. `"1m.rate": "1.17K (19.55/s)"`). [PR#348](https://github.com/ethereumproject/go-ethereum/pull/348).
+
+#### Refactored
+- core: Extract default chain configurations from Go to JSON, findable now in `core/config` as JSON and compiled to `core/assets`. [PR#347](https://github.com/ethereumproject/go-ethereum/pull/347).
+
 
 ## [4.0.0] - 2017-09-05 - b11d32b
 
