@@ -23,15 +23,22 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 ## [Unreleased]
 
 #### Added
-- _Command_: `dump [sorted] [hash|num],[hash|num] [address],[address]` - use the `sorted` option to sort state balances in memory (note that this will require significantly more time and memory resources). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
 - _Feature_: `mlog`: machine-readable/event-based logging. Designed to play nicely with log analysis systems like Elasticsearch/+Kibana. Please find associated documentation on the Wiki at [mlog-API](https://github.com/ethereumproject/go-ethereum/wiki/mlog-API).
+- _Command_: `dump [sorted] [hash|num],[hash|num] [address],[address]` - use the `sorted` option to sort state balances in memory (note that this will require significantly more time and memory resources). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
+- _Command_: `api [module] [methodName] <JSONargs>` - connect to a running geth instance via IPC and call any API method through the command line. Accepts arguments in the form of space-separated JSON-formatted values, or as a single JSON-formatted string. See the [wiki reference](http://github.com/ethereumproject/go-ethereum/wiki/Command-Line-Options#api-module-method-jsonargs) for more information. Thanks @tzdybal!
 
 #### Changed
 - JSON-RPC: `debug_metrics` method accepts optional boolean argument to toggle raw metrics (eg. `"1m.rate": 1174`) vs. human-readable (default, eg. `"1m.rate": "1.17K (19.55/s)"`). [PR#348](https://github.com/ethereumproject/go-ethereum/pull/348).
+- _Option_: `--exec` can now be used as a global flag _or_ as a command flag for `console` or `attach`.
+
+  ```shell
+  $ geth --exec 'console.log("hello");' attach
+  # or...
+  $ geth attach --exec 'console.log("hello");'
+  ```
 
 #### Refactored
 - core: Extract default chain configurations from Go to JSON, findable now in `core/config` as JSON and compiled to `core/assets`. [PR#347](https://github.com/ethereumproject/go-ethereum/pull/347).
-
 
 ## [4.0.0] - 2017-09-05 - b11d32b
 
