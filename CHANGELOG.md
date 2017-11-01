@@ -23,11 +23,10 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 ## [Unreleased]
 
 #### Added
+- _Feature_: Recoverability for blockchain database; if geth is abused by it's environment or OS (eg. 100+ `SIGKILL`s/hour) there's a possibility that the db can become internally inconsistent (eg. storing an invalid head header hash). This feature should eliminate or reduce the need to `rm -rf /chaindata`, saving loads of time.
 - _Feature_: `mlog`: machine-readable/event-based logging. Designed to play nicely with log analysis systems like Elasticsearch/+Kibana. Please find associated documentation on the Wiki at [mlog-API](https://github.com/ethereumproject/go-ethereum/wiki/mlog-API).
 - _Command_: `dump <|sorted> <hash|num>,<hash|num> <address>,<address>` - use the `sorted` option to sort state balances in memory (note that this will require significantly more time and memory resources). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
 - _Command_: `api <module> <methodName> <|JSONargs>` - connect to a running geth instance via IPC and call any API method through the command line. Accepts arguments in the form of space-separated JSON-formatted values, or as a single JSON-formatted string. See the [wiki reference](http://github.com/ethereumproject/go-ethereum/wiki/Command-Line-Options#api-module-method-jsonargs) for more information. Thanks @tzdybal!
-- _Feature_: JS console added methods `debug.verbosity(<number>)` and `debug.vmodule(<k=v,k=v strings)`, enabling changing global and module-specific logging verbosity on the fly
-- _Command_: `api`: get standard JSON-API output from the command line for all available RPC methods from a running geth instance, eg:
 
   ```shell
   # Terminal 1
@@ -43,6 +42,8 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
   ]
   ```
 
+- _Feature_: JS console added methods `debug.verbosity(<number>)` and `debug.vmodule(<k=v,k=v strings)`, enabling changing global and module-specific logging verbosity on the fly
+
 #### Changed
 - JSON-RPC: `debug_metrics` method accepts optional boolean argument to toggle raw metrics (eg. `"1m.rate": 1174`) vs. human-readable (default, eg. `"1m.rate": "1.17K (19.55/s)"`). [PR#348](https://github.com/ethereumproject/go-ethereum/pull/348).
 - _Option_: `--exec` can now be used as a global flag _or_ as a command flag for `console` or `attach`.
@@ -54,7 +55,7 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
   ```
 
 #### Fixed
-- core: handle database write errors on `WriteHeadFastBlockHash` and `WriteHeadBlockHash`
+- core: unsilence database write errors on `WriteHeadFastBlockHash` and `WriteHeadBlockHash`
 - eth: nil pointer on Total Difficulty when OS runs out of available storage
 
 #### Refactored
