@@ -43,11 +43,11 @@ import (
 	"github.com/ethereumproject/go-ethereum/event"
 	"github.com/ethereumproject/go-ethereum/logger"
 	"github.com/ethereumproject/go-ethereum/logger/glog"
+	ethMetrics "github.com/ethereumproject/go-ethereum/metrics"
 	"github.com/ethereumproject/go-ethereum/miner"
 	"github.com/ethereumproject/go-ethereum/p2p"
 	"github.com/ethereumproject/go-ethereum/rlp"
 	"github.com/ethereumproject/go-ethereum/rpc"
-	"github.com/ethereumproject/go-ethereum/metrics"
 )
 
 const defaultGas = uint64(90000)
@@ -1681,25 +1681,95 @@ func (api *PublicDebugAPI) SeedHash(number uint64) (string, error) {
 }
 
 // Metrics return all available registered metrics for the client.
-// TODO: add optional param for human-readable values instead of float64's
-// eg "Avg01Min: '169.12K (2.82K/s)'
-// vs. machine-readable units (eg. "AvgRate01Min: 1599.6190029292586,").
-//
 // See https://github.com/ethereumproject/go-ethereum/wiki/Metrics-and-Monitoring for prophetic documentation.
-func (api *PublicDebugAPI) Metrics() (interface{}, error) {
+func (api *PublicDebugAPI) Metrics(raw bool) (map[string]interface{}, error) {
 
-	b, err := metrics.CollectToJSON()
+	// Create a rate formatter
+	units := []string{"", "K", "M", "G", "T", "E", "P"}
+	round := func(value float64, prec int) string {
+		unit := 0
+		for value >= 1000 {
+			unit, value, prec = unit+1, value/1000, 2
+		}
+		return fmt.Sprintf(fmt.Sprintf("%%.%df%s", prec, units[unit]), value)
+	}
+	format := func(total float64, rate float64) string {
+		return fmt.Sprintf("%s (%s/s)", round(total, 0), round(rate, 2))
+	}
+
+	var b []byte
+	var err error
+
+	b, err = ethMetrics.CollectToJSON()
 	if err != nil {
 		return nil, err
 	}
 
 	out := make(map[string]interface{})
-	e := json.Unmarshal(b, &out)
-	if e != nil {
-		return nil, e
+	err = json.Unmarshal(b, &out)
+	if err != nil {
+		return nil, err
+	}
+
+	// human friendly if specified
+	if !raw {
+		rout := out
+		for k, v := range out {
+			if m, ok := v.(map[string]interface{}); ok {
+				// This is one way of differentiating Meters, Timers, and Gauges.
+				// whilei: (having some trouble with *metrics.StandardTimer(etc) type switches)
+				// If new types metrics are introduced, they should have their relevant values added here.
+				if _, ok := m["mean.rate"]; ok {
+					h1m := format(m["1m.rate"].(float64)*60, m["1m.rate"].(float64))
+					h5m := format(m["5m.rate"].(float64)*300, m["5m.rate"].(float64))
+					h15m := format(m["15m.rate"].(float64)*900, m["15m.rate"].(float64))
+					hmr := format(m["mean.rate"].(float64), m["mean.rate"].(float64))
+					rout[k] = map[string]interface{}{
+						"1m.rate":   h1m,
+						"5m.rate":   h5m,
+						"15m.rate":  h15m,
+						"mean.rate": hmr,
+						"count":     fmt.Sprintf("%v", m["count"]),
+					}
+				} else if _, ok := m["value"]; ok {
+					rout[k] = map[string]interface{}{
+						"value": fmt.Sprintf("%v", m["value"]),
+					}
+				}
+			}
+		}
+		return rout, nil
 	}
 
 	return out, nil
+}
+
+// Verbosity implements api method debug_verbosity, enabling setting
+// global logging verbosity on the fly.
+// Note that it will NOT allow setting verbosity '0', which is effectively 'off'.
+// In place of ability to receive 0 as a functional parameter, debug.verbosity() -> debug.verbosity(0) -> glog.GetVerbosity().
+// creates a shorthand/convenience method as a "getter" function returning the current value
+// of the verbosity setting.
+func (api *PublicDebugAPI) Verbosity(n uint64) (int, error) {
+	nint := int(n)
+	if nint == 0 {
+		return int(*glog.GetVerbosity()), nil
+	}
+	if nint <= logger.Detail || nint == logger.Ridiculousness {
+		glog.SetV(nint)
+		return int(*glog.GetVerbosity()), nil
+	}
+	return -1, errors.New("invalid logging level")
+}
+
+// Vmodule implements api method debug_vmodule, enabling setting
+// glog per-module verbosity settings on the fly.
+func (api *PublicDebugAPI) Vmodule(s string) (string, error) {
+	if s == "" {
+		return glog.GetVModule().String(), nil
+	}
+	err := glog.GetVModule().Set(s)
+	return glog.GetVModule().String(), err
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM
@@ -1776,7 +1846,7 @@ func (s *PublicDebugAPI) TraceTransaction(txHash common.Hash) (*ExecutionResult,
 	gp := new(core.GasPool).AddGas(tx.Gas())
 	ret, gas, err := core.ApplyMessage(vmenv, msg, gp)
 	return &ExecutionResult{
-		Gas: gas,
+		Gas:         gas,
 		ReturnValue: fmt.Sprintf("%x", ret),
 	}, nil
 }
@@ -1815,12 +1885,12 @@ func (s *PublicDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int) (core.
 		}
 
 		msg := callmsg{
-			from: from,
-			to: tx.To(),
-			gas: tx.Gas(),
+			from:     from,
+			to:       tx.To(),
+			gas:      tx.Gas(),
 			gasPrice: tx.GasPrice(),
-			value: tx.Value(),
-			data: tx.Data(),
+			value:    tx.Value(),
+			data:     tx.Data(),
 		}
 
 		vmenv := core.NewEnv(statedb, s.eth.chainConfig, s.eth.BlockChain(), msg, block.Header())

@@ -24,9 +24,9 @@ import (
 	"runtime"
 	"time"
 
+	"bytes"
 	"github.com/ethereumproject/go-ethereum/logger/glog"
 	"github.com/rcrowley/go-metrics"
-	"bytes"
 )
 
 // Reg is the metrics destination.
@@ -153,7 +153,6 @@ func CollectToJSON() ([]byte, error) {
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
 	defer writer.Flush()
-
 	metrics.WriteJSONOnce(reg, writer)
 
 	return b.Bytes(), nil

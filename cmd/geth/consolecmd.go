@@ -33,30 +33,45 @@ var (
 		Name:   "console",
 		Usage:  `Geth Console: interactive JavaScript environment`,
 		Description: `
-The Geth console is an interactive shell for the JavaScript runtime environment
-which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console
-`,
+	The Geth console is an interactive shell for the JavaScript runtime environment
+	which exposes a node admin interface as well as the Ðapp JavaScript API.
+	See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console
+		`,
+		Flags: []cli.Flag{
+			ExecFlag,
+		},
 	}
 	attachCommand = cli.Command{
 		Action: remoteConsole,
 		Name:   "attach",
 		Usage:  `Geth Console: interactive JavaScript environment (connect to node)`,
 		Description: `
-The Geth console is an interactive shell for the JavaScript runtime environment
-which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console.
-This command allows to open a console on a running geth node.
-	`,
+	The Geth console is an interactive shell for the JavaScript runtime environment
+	which exposes a node admin interface as well as the Ðapp JavaScript API.
+	See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console.
+	This command allows to open a console on a running geth node.
+
+	<DATADIR> and <CHAINDIR> flags will be parsed as usual.
+	For example:
+
+		geth --chain=morden attach
+
+	or,
+
+		geth --data-dir=/path/to/gethdata --chain privatenet attach
+		`,
+		Flags: []cli.Flag{
+			ExecFlag,
+		},
 	}
 	javascriptCommand = cli.Command{
 		Action: ephemeralConsole,
 		Name:   "js",
 		Usage:  `Executes the given JavaScript files in the Geth JavaScript VM`,
 		Description: `
-The JavaScript VM exposes a node admin interface as well as the Ðapp
-JavaScript API. See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console
-`,
+	The JavaScript VM exposes a node admin interface as well as the Ðapp
+	JavaScript API. See https://github.com/ethereum/go-ethereum/wiki/Javascipt-Console
+		`,
 	}
 )
 
@@ -86,10 +101,19 @@ func localConsole(ctx *cli.Context) error {
 	defer console.Stop(false)
 
 	// If only a short execution was requested, evaluate and return
+	//
+	// --exec as command sub-flag
+	if script := ctx.String(ExecFlag.Name); script != "" {
+		console.Evaluate(script)
+		return nil
+	}
+
+	// --exec as global flag
 	if script := ctx.GlobalString(ExecFlag.Name); script != "" {
 		console.Evaluate(script)
 		return nil
 	}
+
 	// Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
 	console.Interactive()
@@ -125,6 +149,14 @@ func remoteConsole(ctx *cli.Context) error {
 	defer console.Stop(false)
 
 	// If only a short execution was requested, evaluate and return
+	//
+	// --exec as command sub-flag
+	if script := ctx.String(ExecFlag.Name); script != "" {
+		console.Evaluate(script)
+		return nil
+	}
+
+	// --exec as global flag
 	if script := ctx.GlobalString(ExecFlag.Name); script != "" {
 		console.Evaluate(script)
 		return nil

@@ -17,30 +17,31 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"os/signal"
-	"runtime"
-
-	"strings"
-
+	"bufio"
 	"errors"
+	"fmt"
 	"github.com/ethereumproject/ethash"
 	"github.com/ethereumproject/go-ethereum/core"
 	"github.com/ethereumproject/go-ethereum/core/state"
 	"github.com/ethereumproject/go-ethereum/core/types"
 	"github.com/ethereumproject/go-ethereum/eth"
 	"github.com/ethereumproject/go-ethereum/eth/downloader"
+	"github.com/ethereumproject/go-ethereum/event"
 	"github.com/ethereumproject/go-ethereum/logger"
 	"github.com/ethereumproject/go-ethereum/logger/glog"
 	"github.com/ethereumproject/go-ethereum/node"
+	"github.com/ethereumproject/go-ethereum/pow"
 	"github.com/ethereumproject/go-ethereum/rlp"
 	"gopkg.in/urfave/cli.v1"
+	"io"
 	"io/ioutil"
 	"math/big"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -571,7 +572,9 @@ func rollback(ctx *cli.Context) error {
 
 	glog.Warning("Rolling back blockchain...")
 
-	bc.SetHead(blockIndex)
+	if err := bc.SetHead(blockIndex); err != nil {
+		glog.V(logger.Warn).Infof("error setting head: %v", err)
+	}
 
 	// Check if *neither* block nor fastblock numbers match desired head number
 	nowCurrentHead := bc.CurrentBlock().Number().Uint64()
@@ -700,7 +703,7 @@ func makedag(ctx *cli.Context) error {
 			if err != nil {
 				glog.Fatal("Can't find dir")
 			}
-			fmt.Println("making DAG, this could take awhile...")
+			glog.V(logger.Info).Infoln("making DAG, this could take awhile...")
 			ethash.MakeDAG(blockNum, dir)
 		}
 	default:
@@ -818,7 +821,7 @@ func runStatusSyncLogs(e *eth.Ethereum, interval string, maxPeers int) {
 		intervalI = i
 	}
 
-	glog.V(logger.Error).Infof("STATUS SYNC Log interval set: %d seconds", intervalI)
+	glog.V(logger.Info).Infof("STATUS SYNC Log interval set: %d seconds", intervalI)
 
 	tickerInterval := time.Second * time.Duration(int32(intervalI))
 	ticker := time.NewTicker(tickerInterval)
@@ -928,8 +931,189 @@ func runStatusSyncLogs(e *eth.Ethereum, interval string, maxPeers int) {
 		case <-sigc:
 			// Listen for interrupt
 			ticker.Stop()
-			glog.V(logger.Error).Infoln("STATUS SYNC Stopping logging.")
+			glog.V(logger.Debug).Infoln("STATUS SYNC Stopping logging.")
 			return
 		}
 	}
+}
+
+func stringInSlice(s string, sl []string) bool {
+	for _, l := range sl {
+		if l == s {
+			return true
+		}
+	}
+	return false
+}
+
+// makeMLogDocumentation creates markdown documentation text for, eg. wiki
+// That's why it uses 'fmt' instead of glog or log; output with prefixes (glog and log)
+// will break markdown.
+func makeMLogDocumentation(ctx *cli.Context) error {
+	wantComponents := ctx.Args()
+
+	// If no components specified, print all.
+	if len(wantComponents) == 0 {
+		for k := range logger.MLogRegistryAvailable {
+			wantComponents = append(wantComponents, string(k))
+		}
+	}
+
+	// Should throw an error if any unavailable components were specified.
+	cs := []string{}
+	for c := range logger.MLogRegistryAvailable {
+		cs = append(cs, string(c))
+	}
+	for _, c := range wantComponents {
+		if !stringInSlice(c, cs) {
+			glog.Fatalf("Specified component does not exist: %s\n ? Available components: %v", c, cs)
+		}
+	}
+
+	// "table of contents"
+	for cmp, lines := range logger.MLogRegistryAvailable {
+		if !stringInSlice(string(cmp), wantComponents) {
+			continue
+		}
+		fmt.Printf("\n[%s]\n\n", cmp)
+		for _, line := range lines {
+			// print anchor links ul list items
+			if ctx.Bool("md") {
+				fmt.Printf("- [%s](#%s)\n", line.EventName(), strings.Replace(line.EventName(), ".", "-", -1))
+			} else {
+				fmt.Printf("- %s\n", line.EventName())
+			}
+		}
+	}
+
+	// Only print per-line markdown documentation if -md flag given.
+	if ctx.Bool("md") {
+		fmt.Println("\n----\n") // hr
+
+		// each LINE
+		for cmp, lines := range logger.MLogRegistryAvailable {
+			if !stringInSlice(string(cmp), wantComponents) {
+				continue
+			}
+			for _, line := range lines {
+				fmt.Println(line.FormatDocumentation(cmp))
+				fmt.Println("----")
+			}
+		}
+	}
+
+	fmt.Println()
+	return nil
+}
+
+func recoverChaindata(ctx *cli.Context) error {
+
+	// Congruent to MakeChain(), but uses special NewBlockChainDryrun. Avoids a one-off function in flags.go.
+	var err error
+	sconf := mustMakeSufficientChainConfig(ctx)
+	bcdb := MakeChainDatabase(ctx)
+	defer bcdb.Close()
+
+	pow := pow.PoW(core.FakePow{})
+	if !ctx.GlobalBool(aliasableName(FakePoWFlag.Name, ctx)) {
+		pow = ethash.New()
+	} else {
+		glog.V(logger.Info).Info("Consensus: fake")
+	}
+
+	bc, err := core.NewBlockChainDryrun(bcdb, sconf.ChainConfig, pow, new(event.TypeMux))
+	if err != nil {
+		glog.Fatal("Could not start chain manager: ", err)
+	}
+
+	if blockchainLoadError := bc.LoadLastState(true); blockchainLoadError != nil {
+		glog.V(logger.Error).Infof("! Found error while loading blockchain: %v", blockchainLoadError)
+		// but do not return
+	}
+
+	header := bc.CurrentHeader()
+	currentBlock := bc.CurrentBlock()
+	currentFastBlock := bc.CurrentFastBlock()
+
+	glog.V(logger.Error).Infoln("Current status (before recovery attempt):")
+	if header != nil {
+		glog.V(logger.Error).Infof("Last header: #%d\n", header.Number.Uint64())
+		if currentBlock != nil {
+			glog.V(logger.Error).Infof("Last block: #%d\n", currentBlock.Number())
+		} else {
+			glog.V(logger.Error).Infoln("! Last block: nil")
+		}
+		if currentFastBlock != nil {
+			glog.V(logger.Error).Infof("Last fast block: #%d\n", currentFastBlock.Number())
+		} else {
+			glog.V(logger.Error).Infoln("! Last fast block: nil")
+		}
+	} else {
+		glog.V(logger.Error).Infoln("! Last header: nil")
+	}
+
+	glog.V(logger.Error).Infoln(glog.Separator("-"))
+
+	glog.V(logger.Error).Infoln("Checking db validity and recoverable data...")
+	checkpoint := bc.Recovery(1, 2048)
+	glog.V(logger.Error).Infof("Found last recoverable checkpoint=#%d\n", checkpoint)
+
+	glog.V(logger.Error).Infoln(glog.Separator("-"))
+
+	glog.V(logger.Error).Infoln("Setting blockchain db head to last safe checkpoint...")
+	if setHeadErr := bc.SetHead(checkpoint); setHeadErr != nil {
+		glog.V(logger.Error).Infof("Error setting head: %v\n", setHeadErr)
+		return setHeadErr
+	}
+	return nil
+}
+
+// https://gist.github.com/r0l1/3dcbb0c8f6cfe9c66ab8008f55f8f28b
+// askForConfirmation asks the user for confirmation. A user must type in "yes" or "no" and
+// then press enter. It has fuzzy matching, so "y", "Y", "yes", "YES", and "Yes" all count as
+// confirmations. If the input is not recognized, it will ask again. The function does not return
+// until it gets a valid response from the user.
+//
+// Use 'error' verbosity for logging since this is user-critical and required feedback.
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		glog.V(logger.Error).Infof("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			glog.Fatalln(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		} else {
+			glog.V(logger.Error).Infoln(glog.Separator("*"))
+			glog.V(logger.Error).Infoln("* INVALID RESPONSE: Please respond with [y|yes] or [n|no], or use CTRL-C to abort.")
+			glog.V(logger.Error).Infoln(glog.Separator("*"))
+		}
+	}
+}
+
+// resetChaindata removes (rm -rf's) the /chaindata directory, ensuring
+// eradication of any corrupted chain data.
+func resetChaindata(ctx *cli.Context) error {
+	dir := MustMakeChainDataDir(ctx)
+	dir = filepath.Join(dir, "chaindata")
+	prompt := fmt.Sprintf("\n\nThis will remove the directory='%s' and all of it's contents.\n** Are you sure you want to remove ALL chain data?", dir)
+	c := askForConfirmation(prompt)
+	if c {
+		if err := os.RemoveAll(dir); err != nil {
+			return err
+		}
+		glog.V(logger.Error).Infof("Successfully removed chaindata directory: '%s'\n", dir)
+	} else {
+		glog.V(logger.Error).Infoln("Leaving chaindata untouched. As you were.")
+	}
+	return nil
 }
