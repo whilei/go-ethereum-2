@@ -20,11 +20,27 @@ Releases considered __stable__ may be found on our [Releases Page](https://githu
 
 Rolling builds for the master branch may be found at [builds.etcdevteam.com](builds.etcdevteam.com).
 
+## [4.2.0]
+
+#### Added
+- Support for [SputnikVM](https://github.com/ethereumproject/sputnikvm), use flag `--sputnikvm`
+- Debug logs are by default written to FS, with functionality and options for log compression and rotation
+
+#### Changed
+- Logging display made independent from debug logs. Run `geth help` to view new flags under "Logging" and "Experimental."
+
+#### Fixed
+- Allow `GOMAXPROCS` environment variable to be set
+
+#### Refactored
+- Manage dependencies with `dep`
+
 ## [4.1.2] - 2017-12-04 - db0a4d5
 
 #### Fixed
 - Head tracking issue which causes geth to "stall," or to fall out of sync for a period
   of time with the blockchain head.
+- `monitor` command failed on Windows, updated go-winio dependency
 
 ## [4.1.1] - 2017-11-07 - b3113bc
 
