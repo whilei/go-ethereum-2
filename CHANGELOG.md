@@ -51,7 +51,8 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 ## [4.1.0] - 2017-11-01 - f7204f1
 
 #### Added
-- _Feature_: Recoverability and stability for blockchain database; if geth is abused by it's environment or OS (eg. 100+ `SIGKILL`s/hour) there's a possibility that the db can become internally inconsistent (eg. storing an invalid head header hash). This feature should eliminate or reduce the need to `rm -rf /chaindata`, saving loads of time.
+- _Feature_: Recoverability for blockchain database; if geth is abused by it's environment or OS (eg. 100+ `SIGKILL`s/hour) there's a possibility that the db can become internally inconsistent (eg. storing an invalid head header hash). This feature should eliminate or reduce the need to `rm -rf /chaindata`, saving loads of time.
+- _Feature_: `mlog`: machine-readable/event-based logging. Designed to play nicely with log analysis systems like Elasticsearch/+Kibana. Please find associated documentation on the Wiki at [mlog-API](https://github.com/ethereumproject/go-ethereum/wiki/mlog-API).
 - _Command_: `dump <|sorted> <hash|num>,<hash|num> <address>,<address>` - use the `sorted` option to sort state balances in memory (note that this will require significantly more time and memory resources). [PR#341](https://github.com/ethereumproject/go-ethereum/pull/341). Thanks @sudachen!
 - _Command_: `api <module> <methodName> <|JSONargs>` - connect to a running geth instance via IPC and call any API method through the command line. Accepts arguments in the form of space-separated JSON-formatted values, or as a single JSON-formatted string. See the [wiki reference](http://github.com/ethereumproject/go-ethereum/wiki/Command-Line-Options#api-module-method-jsonargs) for more information. Thanks @tzdybal!
 
@@ -69,7 +70,7 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
   ]
   ```
 
-- _Feature_: JS console added methods `debug.verbosity(<number>)` and `debug.vmodule(<k=v,k=v strings>)`, enabling changing global and module-specific logging verbosity on the fly
+- _Feature_: JS console added methods `debug.verbosity(<number>)` and `debug.vmodule(<k=v,k=v strings)`, enabling changing global and module-specific logging verbosity on the fly
 
 #### Changed
 - JSON-RPC: `debug_metrics` method accepts optional boolean argument to toggle raw metrics (eg. `"1m.rate": 1174`) vs. human-readable (default, eg. `"1m.rate": "1.17K (19.55/s)"`). [PR#348](https://github.com/ethereumproject/go-ethereum/pull/348).
@@ -87,7 +88,7 @@ Rolling builds for the master branch may be found at [builds.etcdevteam.com](bui
 
 #### Refactored
 - core: Extract default chain configurations from Go to JSON, findable now in `core/config` as JSON and compiled to `core/assets`. [PR#347](https://github.com/ethereumproject/go-ethereum/pull/347).
-
+- api: Remove unimplemented/dead `debug` methods
 
 ## [4.0.0] - 2017-09-05 - b11d32b
 
