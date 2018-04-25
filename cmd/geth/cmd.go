@@ -714,7 +714,7 @@ func startNode(ctx *cli.Context, stack *node.Node) *eth.Ethereum {
 	// Unlock any account specifically requested
 	var ethereum *eth.Ethereum
 	if err := stack.Service(&ethereum); err != nil {
-		glog.Fatal("ethereum service not running: ", err)
+		glog.Fatal("Ethereum service not running: ", err)
 	}
 
 	// Start auxiliary services if enabled
