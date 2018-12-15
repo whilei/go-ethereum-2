@@ -1,7 +1,7 @@
 # common
 
 [![Build
-Status](https://travis-ci.org/ethereumproject/go-ethereum.png?branch=master)](https://travis-ci.org/ethereum/go-ethereum)
+Status](https://travis-ci.org/ethereumclassic/go-ethereum.png?branch=master)](https://travis-ci.org/ethereum/go-ethereum)
 
 The common package contains the ethereum utility library.
 
