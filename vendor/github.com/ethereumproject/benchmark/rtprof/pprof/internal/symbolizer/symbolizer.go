@@ -26,10 +26,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/binutils"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/symbolz"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/profile"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/binutils"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/symbolz"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/profile"
 	"github.com/ianlancetaylor/demangle"
 )
 

@@ -25,9 +25,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/report"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/profile"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/report"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/profile"
 )
 
 // PProf acquires a profile, and symbolizes it using a profile

@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/binutils"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/symbolizer"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/binutils"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/symbolizer"
 )
 
 // setDefaults returns a new plugin.Options with zero fields sets to
