@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/measurement"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/profile"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/measurement"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/profile"
 )
 
 var tagFilterRangeRx = regexp.MustCompile("([[:digit:]]+)([[:alpha:]]+)")

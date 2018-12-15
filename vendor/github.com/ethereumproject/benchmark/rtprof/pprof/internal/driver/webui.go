@@ -27,10 +27,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/graph"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/report"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/profile"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/graph"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/report"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/profile"
 )
 
 // webInterface holds the state needed for serving a browser based interface.
