@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/profile"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/profile"
 )
 
 // Graph summarizes a performance profile into a format that is

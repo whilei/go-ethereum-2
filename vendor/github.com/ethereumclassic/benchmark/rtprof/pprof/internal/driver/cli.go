@@ -19,8 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/binutils"
-	"github.com/ethereumproject/benchmark/rtprof/pprof/internal/plugin"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/binutils"
+	"github.com/ethereumclassic/benchmark/rtprof/pprof/internal/plugin"
 )
 
 type source struct {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ethereumproject/benchmark/rtprof"
+	"github.com/ethereumclassic/benchmark/rtprof"
 	"os"
 	"os/signal"
 	"time"
