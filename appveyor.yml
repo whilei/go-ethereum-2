@@ -48,16 +48,36 @@ build_script:
   - ps: >-
       .\geth.exe version | Where {$_ -match "^Version: "} | %{$actual=($_ -split "\s+")[1];If($actual -ne $env:VERSION){"Expected: `"$env:VERSION`", got: `"$ACTUAL`""; exit 1}}
   - 7z a geth-classic-win64-%VERSION%.zip geth.exe
-before_deploy:
-  # Set up GCP upload.
-  - ps: >-
-      If (($env:APPVEYOR_REPO_NAME -eq 'ethereumclassic/go-ethereum') -and (($env:APPVEYOR_REPO_BRANCH -eq 'master') -or ($env:APPVEYOR_REPO_TAG -eq 'true'))) {
-        nuget install secure-file -ExcludeVersion
-        secure-file\tools\secure-file -decrypt gcloud-appveyor.json.enc -secret "$env:GCP_PASSWD" -out .gcloud.json
-      }
-# Deploy on APPVEYOR_REPO_BRANCH=master or APPVEYOR_REPO_TAG=true
-deploy_script:
-  - ps: >-
-      If (($env:APPVEYOR_REPO_NAME -eq 'ethereumclassic/go-ethereum') -and (($env:APPVEYOR_REPO_BRANCH -eq 'master') -or ($env:APPVEYOR_REPO_TAG -eq 'true'))) {
-        janus.exe deploy -to="builds.etcdevteam.com/go-ethereum/$env:VERSION_BASE/" -files="./*.zip" -key="./.gcloud.json"
-      }
+
+artifacts:
+  - path: '*.zip'
+    name: geth
+# https://www.appveyor.com/docs/deployment/bintray/
+# for reference (from back when ethereumproject used to use bintray): https://github.com/ethereumclassic/go-ethereum/blob/c3dc48237e1e3200f575d1e7b17354ea5b8163fd/appveyor.yml
+deploy:
+- provider: BinTray
+  username: realcodywburns
+  api_key:
+    secure: #TODO # AABBCC+DDD==
+  subject: ethereumclassic
+  repo: Go-ethereum
+  package: go-ethereum #TODO: set me up on Bintray (> name of package to upload artifacts to. Deployment will fail if specified package does not exists.)
+  version: %VERSION_BASE%
+  publish: true
+  override: true
+  explode: false
+  on:
+    branch: master
+- provider: BinTray
+  username: realcodywburns
+  api_key:
+    secure: #TODO # AABBCC+DDD==
+  subject: ethereumclassic
+  repo: Go-ethereum
+  package: go-ethereum #TODO: set me up on Bintray (> name of package to upload artifacts to. Deployment will fail if specified package does not exists.)
+  version: %VERSION_BASE%
+  publish: true
+  override: true
+  explode: false
+  on:
+    appveyor_repo_tag: true
