@@ -1,0 +1,70 @@
+language: go
+go_import_path: github.com/ethereumclassic/go-ethereum
+
+go: 1.10
+os:
+- linux
+- osx
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository ppa:duggan/bats --yes; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq bats; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install bats; fi
+
+script: |
+    export GOPATH=$HOME/go
+    export GOBIN=$GOPATH/bin
+    mkdir -p $GOBIN
+    go version
+    go env
+    export TAGS="netgo deterministic"
+
+    export USE_SPUTNIK_VM=true
+    if [ $USE_SPUTNIK_VM == true ]; then
+      export CGO_LDFLAGS="$GOPATH/src/github.com/ethereumclassic/go-ethereum/vendor/github.com/ETCDEVTeam/sputnikvm-ffi/c/libsputnikvm.a -ldl"
+      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        export CGO_LDFLAGS="$CGO_LDFLAGS -lresolv"
+      fi
+      export TAGS="sputnikvm $TAGS"
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+      export PATH=$PATH:$HOME/.cargo/bin
+      cd $GOPATH/src/github.com/ethereumclassic/go-ethereum
+      make -C vendor/github.com/ETCDEVTeam/sputnikvm-ffi/c
+    fi
+
+    go test -ldflags "-X github.com/ethereumclassic/go-ethereum/core.UseSputnikVM=$USE_SPUTNIK_VM" -tags="$TAGS" ./...
+    go get github.com/etcdevteam/go-schroedinger/cmd/schroedinger/...
+    schroedinger -t 5 -f ./schroedinger-tests.txt
+
+    export CGO_LDFLAGS="$GOPATH/src/github.com/ethereumclassic/go-ethereum/vendor/github.com/ETCDEVTeam/sputnikvm-ffi/c/libsputnikvm.a -ldl"
+    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export CGO_LDFLAGS="$CGO_LDFLAGS -lresolv"
+    else
+      export EXT_LD_FLAGS="-extldflags=-static"
+    fi
+    cd $GOPATH/src/github.com/ethereumclassic/go-ethereum
+    go build -tags="sputnikvm netgo" -ldflags "$EXT_LD_FLAGS -X main.Version=`janus version -format TAG_OR_NIGHTLY`" ./cmd/geth
+    cp ./geth $GOPATH/bin/
+    bats tests/bats
+
+    if [ ! -x ~/janusbin/janus ]; then
+      cd $HOME; curl -sL https://raw.githubusercontent.com/ethereumclassic/janus/master/get.sh | bash
+      cd $GOPATH/src/github.com/ethereumclassic/go-ethereum
+    fi
+    export PATH=$PATH:$HOME/janusbin
+    export VERSION=`janus version -format TAG_OR_NIGHTLY`
+    ./geth version | awk '/^Version: /{if (ENVIRON["VERSION"] != $2){printf "Expected: \"%s\", got \"%s\"\n",ENVIRON["VERSION"], $2; exit 1}}'
+
+    zip geth-classic-$TRAVIS_OS_NAME-$VERSION.zip geth
+    sed -E "s/APPVERSION/$VERSION/" bintray.tpl.json > bintray.json
+
+deploy:
+  provider: bintray
+  file: "bintray.json"
+  user: realcodywburns
+  key:
+    secure: #TODO # "c50TvgsSeBMs8LoPO6nQVad3rie0Csh9l2KmwBCCZCLnJNA2nRTMM4EvlNiO8XiYKxms5h3KbzkZXCm+LCmsf+H8U0yupb44prg/MZ8HdvHQ4Qh/hEfQ8rESlxsgu6fjDjF779ge4gfYImyXHkBOCn/PoLkw+Akzw18l2dxsBnAecc+dHwBQ8NQ1Wh7CulD05DEG4SmdMuA/urj4f3kQGkb03jLF8/dNlf8HlTfgREaeKP9rpAtAKsoRIVC+34FdRWN/i8KG3TY+A3+M8bzIFCVNx+sXQ5YKbbtRQbuLPZPF/ELBWsMaxxHwlujhEbsBbZVkHGGZtKk8/EU1w9ZkEQWghXnkIuDxpqvSHzl491xhhpbf+7XL/uonAHlatoNDu3822vrp/eDj/Ys4vOF7F8dYQ7JIyhmXN/P3khehG7FG8mDBqXuImPtiltqvLBGMbsgUFIlaugaB45Zr/Oe2Umf97MgNJeSW/U5qLXN7sS4fPA/KAquty9yzFaxhgsY9iKiGJdAS6AC/CJxmhzEJWgwu6idAmN/L5BaRg29YTtaK+D6AwIVCky9hyHn0VhFN+ieF8H3P3fweG8PX4i63oqTs0+sAGGygzcN6xNit9NtJQ7i3QeGlzRIXfCh2cMz0pU5ErZrWy+kNH1ixzpW9VyugAl6qUQxnyIhbbY5ybIQ="
+  on:
+    branch: master
+tags: true

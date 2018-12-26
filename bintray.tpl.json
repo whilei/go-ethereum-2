@@ -1,0 +1,18 @@
+{
+  "package": {
+    "name": "go-ethereum",
+    "repo": "Go-ethereum",
+    "subject": "ethereumclassic"
+  },
+
+  "version": {
+    "name": "APPVERSION",
+    "attributes": [],
+    "gpgSign": false
+  },
+
+  "files": [
+    {"includePattern": "./(geth.+\\.zip)", "uploadPattern": "/$1"}
+  ],
+  "publish": true
+}
