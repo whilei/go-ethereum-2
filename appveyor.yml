@@ -62,7 +62,7 @@ deploy:
   subject: ethereumclassic
   repo: Go-ethereum
   package: go-ethereum #TODO: set me up on Bintray (> name of package to upload artifacts to. Deployment will fail if specified package does not exists.)
-  version: %VERSION_BASE%
+  version: "%VERSION_BASE%"
   publish: true
   override: true
   explode: false
@@ -75,7 +75,7 @@ deploy:
   subject: ethereumclassic
   repo: Go-ethereum
   package: go-ethereum #TODO: set me up on Bintray (> name of package to upload artifacts to. Deployment will fail if specified package does not exists.)
-  version: %VERSION_BASE%
+  version: "%VERSION_BASE%"
   publish: true
   override: true
   explode: false
