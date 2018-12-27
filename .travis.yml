@@ -44,6 +44,7 @@ script: |
       export EXT_LD_FLAGS="-extldflags=-static"
     fi
     cd $GOPATH/src/github.com/ethereumclassic/go-ethereum
+
     go build -tags="sputnikvm netgo" -ldflags "$EXT_LD_FLAGS -X main.Version=`janus version -format TAG_OR_NIGHTLY`" ./cmd/geth
     cp ./geth $GOPATH/bin/
     bats tests/bats
@@ -54,10 +55,11 @@ script: |
     fi
     export PATH=$PATH:$HOME/janusbin
     export VERSION=`janus version -format TAG_OR_NIGHTLY`
+    export VERSION_BASE=`janus.exe version -format='v%M.%m.x'`
     ./geth version | awk '/^Version: /{if (ENVIRON["VERSION"] != $2){printf "Expected: \"%s\", got \"%s\"\n",ENVIRON["VERSION"], $2; exit 1}}'
 
     zip geth-classic-$TRAVIS_OS_NAME-$VERSION.zip geth
-    sed -E "s/APPVERSION/$VERSION/" bintray.tpl.json > bintray.json
+    sed -E "s/APPVERSION/$VERSION_BASE/" bintray.tpl.json > bintray.json
 
 deploy:
   provider: bintray
