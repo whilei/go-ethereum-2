@@ -43,6 +43,12 @@ build_script:
   - ps: >-
       .\geth.exe version | Where {$_ -match "^Version: "} | %{$actual=($_ -split "\s+")[1];If($actual -ne $env:VERSION){"Expected: `"$env:VERSION`", got: `"$ACTUAL`""; exit 1}}
   - 7z a geth-classic-win64-%VERSION%.zip geth.exe
+  - certUtil -hashfile geth-classic-win64-%VERSION%.zip SHA256 > geth-classic-win64-%VERSION%.zip.sha256.sig
+artifacts:
+  - path: '*.zip'
+    name: geth
+  - path: '*.sig'
+    name: sig
 before_deploy:
   # Set up GCP upload.
   - ps: >-
